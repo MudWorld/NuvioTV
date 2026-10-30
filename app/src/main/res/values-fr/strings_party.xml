@@ -4,7 +4,7 @@
     <string name="party_start_title">Regarder ensemble</string>
     <string name="party_start_description">Invitez vos amis. Chacun lit depuis ses propres sources et reste synchronisé.</string>
     <string name="party_start_action">Lancer une watch party</string>
-    <string name="party_sign_in_required">Connectez-vous à votre compte Nuvio pour utiliser les watch parties.</string>
+    <string name="party_sign_in_required">Connectez-vous à votre compte WatchParty pour utiliser les watch parties.</string>
     <string name="party_unavailable">Les watch parties ne sont pas disponibles pour le moment.</string>
     <string name="party_experimental">Les watch parties sont expérimentales et peuvent ne pas fonctionner comme prévu.</string>
     <string name="party_code_label">Code de la watch party</string>
@@ -72,7 +72,7 @@
     <string name="party_share_unavailable">Ce flux ne peut pas être partagé.</string>
     <string name="party_shared_by">Partagé par %1$s</string>
     <string name="party_invite_scan">Scannez avec un téléphone pour rejoindre</string>
-    <string name="party_invite_share">Ou partagez le code. Vos amis peuvent le saisir dans Watch party sur n’importe quelle application Nuvio.</string>
+    <string name="party_invite_share">Ou partagez le code. Vos amis peuvent le saisir dans Watch party sur n’importe quelle application WatchParty.</string>
     <string name="party_invite_qr">Code QR d’invitation à la watch party</string>
     <string name="party_phone_chat_note">Ouvrez la watch party sur votre téléphone avec ce profil pour discuter.</string>
 </resources>

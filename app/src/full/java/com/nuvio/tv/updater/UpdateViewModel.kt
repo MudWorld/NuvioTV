@@ -57,7 +57,8 @@ class UpdateViewModel @Inject constructor(
     private var updateCheckJob: Job? = null
 
     init {
-        viewModelScope.launch {
+        // WatchParty: no update checks against GitHub releases; new builds are installed from the PC.
+        if (BuildConfig.FEATURE_IN_APP_UPDATES_ENABLED) viewModelScope.launch {
             val enabled = updatePreferences.updateBannerEnabled.first()
             val channel = updatePreferences.getOrInitializeUpdateChannel()
             val autoInstallEnabled = updatePreferences.autoInstallEnabled.first()

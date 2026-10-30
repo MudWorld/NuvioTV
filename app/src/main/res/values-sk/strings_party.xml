@@ -4,7 +4,7 @@
     <string name="party_start_title">Sledovať spolu</string>
     <string name="party_start_description">Pozvite svojich priateľov. Každý prehráva z vlastných zdrojov a synchronizuje sa s ostatnými.</string>
     <string name="party_start_action">Spustiť spoločné sledovanie</string>
-    <string name="party_sign_in_required">Ak chcete používať spoločné sledovanie, prihláste sa do svojho účtu Nuvio.</string>
+    <string name="party_sign_in_required">Ak chcete používať spoločné sledovanie, prihláste sa do svojho účtu WatchParty.</string>
     <string name="party_unavailable">Spoločné sledovanie momentálne nie je k dispozícii.</string>
     <string name="party_experimental">Spoločné sledovanie je vo fáze testovania a nemusí fungovať podľa očakávaní.</string>
     <string name="party_code_label">Kód skupiny</string>
@@ -72,7 +72,7 @@
     <string name="party_share_unavailable">Tento stream nemožno zdieľať.</string>
     <string name="party_shared_by">Zdieľal používateľ %1$s</string>
     <string name="party_invite_scan">Naskenujte telefónom a pripojte sa</string>
-    <string name="party_invite_share">Alebo zdieľajte kód. Priatelia ho môžu zadať v sekcii Spoločné sledovanie v ľubovoľnej aplikácii Nuvio.</string>
+    <string name="party_invite_share">Alebo zdieľajte kód. Priatelia ho môžu zadať v sekcii Spoločné sledovanie v ľubovoľnej aplikácii WatchParty.</string>
     <string name="party_invite_qr">QR kód na pozvánku do spoločného sledovania</string>
     <string name="party_phone_chat_note">Otvorte Spoločné sledovanie na telefóne s týmto profilom pre četovanie.</string>
 </resources>

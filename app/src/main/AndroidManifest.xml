@@ -207,6 +207,15 @@
         </activity>
 
         <profileable android:shell="true" />
+        <!-- WatchParty: screenshot of the app window, only reachable from adb (DUMP permission). -->
+        <receiver
+            android:name="com.nuvio.tv.watchparty.WatchPartyScreenshotReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="space.mudworld.watchparty.SCREENSHOT" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

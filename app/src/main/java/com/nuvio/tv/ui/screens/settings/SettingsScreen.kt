@@ -1027,26 +1027,21 @@ private fun AccountSettingsInline(
     onNavigateToAuthQrSignIn: () -> Unit,
     initialFocusRequester: FocusRequester?
 ) {
-    val accountViewModel: com.nuvio.tv.ui.screens.account.AccountViewModel = hiltViewModel()
-    val accountUiState by accountViewModel.uiState.collectAsStateWithLifecycle()
-
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md)
     ) {
         SettingsDetailHeader(
             title = stringResource(R.string.settings_account),
-            subtitle = stringResource(R.string.settings_account_section_subtitle)
+            subtitle = "WatchParty-Konto und Sicherung"
         )
         SettingsGroupCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            com.nuvio.tv.ui.screens.account.AccountSettingsContent(
-                uiState = accountUiState,
-                viewModel = accountViewModel,
-                onNavigateToAuthQrSignIn = onNavigateToAuthQrSignIn,
+            com.nuvio.tv.ui.screens.account.WatchPartyAccountPanel(
+                onOpenLogin = onNavigateToAuthQrSignIn,
                 initialFocusRequester = initialFocusRequester
             )
         }

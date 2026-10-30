@@ -4,7 +4,7 @@
     <string name="party_start_title">Ver juntos</string>
     <string name="party_start_description">Invita a tus amigos. Cada quien reproduce desde sus propias fuentes y todos se mantienen sincronizados.</string>
     <string name="party_start_action">Iniciar sesión para ver en grupo</string>
-    <string name="party_sign_in_required">Inicia sesión en tu cuenta de Nuvio para usar las sesiones para ver en grupo.</string>
+    <string name="party_sign_in_required">Inicia sesión en tu cuenta de WatchParty para usar las sesiones para ver en grupo.</string>
     <string name="party_unavailable">Las sesiones para ver en grupo no están disponibles en este momento.</string>
     <string name="party_experimental">Las sesiones para ver en grupo son experimentales y podrían no funcionar como se espera.</string>
     <string name="party_code_label">Código del grupo</string>
@@ -72,6 +72,6 @@
     <string name="party_share_unavailable">No se puede compartir este stream.</string>
     <string name="party_shared_by">Compartido por %1$s</string>
     <string name="party_invite_scan">Escanea con un teléfono para unirte</string>
-    <string name="party_invite_share">O comparte el código. Tus amigos pueden ingresarlo en Ver en grupo desde cualquier app de Nuvio.</string>
+    <string name="party_invite_share">O comparte el código. Tus amigos pueden ingresarlo en Ver en grupo desde cualquier app de WatchParty.</string>
     <string name="party_invite_qr">Código QR de invitación para ver en grupo</string>
 </resources>

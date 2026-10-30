@@ -4,7 +4,7 @@
     <string name="party_start_title">Xem cùng nhau</string>
     <string name="party_start_description">Mời bạn bè. Mỗi người phát từ nguồn riêng và luôn được đồng bộ.</string>
     <string name="party_start_action">Tạo phòng xem chung</string>
-    <string name="party_sign_in_required">Đăng nhập vào tài khoản Nuvio để sử dụng phòng xem chung.</string>
+    <string name="party_sign_in_required">Đăng nhập vào tài khoản WatchParty để sử dụng phòng xem chung.</string>
     <string name="party_unavailable">Xem chung hiện không có sẵn.</string>
     <string name="party_experimental">Xem chung đang ở giai đoạn thử nghiệm và có thể không hoạt động như mong đợi.</string>
     <string name="party_code_label">Mã phòng</string>
@@ -72,7 +72,7 @@
     <string name="party_share_unavailable">Không thể chia sẻ luồng phát này.</string>
     <string name="party_shared_by">Chia sẻ bởi %1$s</string>
     <string name="party_invite_scan">Quét bằng điện thoại để tham gia</string>
-    <string name="party_invite_share">Hoặc chia sẻ mã này. Bạn bè có thể nhập nó trong Phòng xem chung trên bất kỳ ứng dụng Nuvio nào.</string>
+    <string name="party_invite_share">Hoặc chia sẻ mã này. Bạn bè có thể nhập nó trong Phòng xem chung trên bất kỳ ứng dụng WatchParty nào.</string>
     <string name="party_invite_qr">Mã QR lời mời phòng xem chung</string>
     <string name="party_phone_chat_note">Mở Xem chung trên điện thoại bằng hồ sơ này để trò chuyện</string>
 </resources>

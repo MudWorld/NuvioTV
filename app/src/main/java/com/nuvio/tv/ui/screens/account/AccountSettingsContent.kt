@@ -369,7 +369,7 @@ private fun SyncOverviewLoadingCard() {
 }
 
 @Composable
-private fun SettingsActionButton(
+internal fun SettingsActionButton(
     icon: ImageVector,
     title: String,
     subtitle: String,

@@ -4,7 +4,7 @@
     <string name="party_start_title">Birlikte izleyin</string>
     <string name="party_start_description">Arkadaşlarınızı çağırın. Herkes kendi kaynağından oynatır, herkes aynı anda kalır.</string>
     <string name="party_start_action">Birlikte izlemeyi başlat</string>
-    <string name="party_sign_in_required">Birlikte izlemeyi kullanmak için Nuvio hesabınıza giriş yapın.</string>
+    <string name="party_sign_in_required">Birlikte izlemeyi kullanmak için WatchParty hesabınıza giriş yapın.</string>
     <string name="party_unavailable">Birlikte izleme şu anda kullanılamıyor.</string>
     <string name="party_experimental">Birlikte izleme deneme aşamasında; her zaman beklendiği gibi çalışmayabilir.</string>
     <string name="party_code_label">Oda kodu</string>
@@ -72,7 +72,7 @@
     <string name="party_share_unavailable">Bu yayın paylaşılamaz.</string>
     <string name="party_shared_by">%1$s paylaştı</string>
     <string name="party_invite_scan">Katılmak için telefonla tarayın</string>
-    <string name="party_invite_share">Kodu da paylaşabilirsiniz. Arkadaşlarınız kodu herhangi bir Nuvio uygulamasında Birlikte izleme ekranına girebilir.</string>
+    <string name="party_invite_share">Kodu da paylaşabilirsiniz. Arkadaşlarınız kodu herhangi bir WatchParty uygulamasında Birlikte izleme ekranına girebilir.</string>
     <string name="party_invite_qr">Birlikte izleme davet QR kodu</string>
     <string name="party_phone_chat_note">Sohbet için bu profille telefonunuzda Birlikte izlemeyi açın.</string>
 </resources>

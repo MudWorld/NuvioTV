@@ -80,7 +80,12 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
     }
 
     override fun onCreate() {
+        // Before super.onCreate(): Hilt injects there, and staged account data must be in place
+        // before any DataStore is opened.
+        com.nuvio.tv.watchparty.WatchPartyAccount.init(this)
         super.onCreate()
+        com.nuvio.tv.watchparty.WatchPartyAccount.start()
+        com.nuvio.tv.watchparty.WatchPartyScreenshot.register(this)
         SentryInitializer.start(this, sentrySettingsDataStore)
         PluginRuntimeHooks.onApplicationCreate(this)
         androidTvChannelSyncService.start()

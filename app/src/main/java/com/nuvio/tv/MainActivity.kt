@@ -746,41 +746,14 @@ open class MainActivity : ComponentActivity() {
                         !onboardingCompletedThisSession
                     ) {
                         startupDestination = StartupDestination.Setup
-                        AuthQrSignInScreen(
+                        // WatchParty: own account instead of the Nuvio QR sign-in.
+                        com.nuvio.tv.ui.screens.account.WatchPartyLoginScreen(
                             onBackPress = { finish() },
-                            onContinue = {
+                            allowSkip = true,
+                            onDone = {
                                 lifecycleScope.launch {
-                                    val shouldRunRemoteOnboardingSync =
-                                        authManager.authState.value is AuthState.FullAccount
-
-                                    if (shouldRunRemoteOnboardingSync) {
-                                        if (onboardingProfileSyncInProgress) return@launch
-                                        onboardingProfileSyncInProgress = true
-                                        val maxAttempts = 3
-                                        var synced = false
-                                        for (attempt in 0 until maxAttempts) {
-                                            val result = profileSyncService.pullFromRemote()
-                                            if (result.isSuccess) {
-                                                synced = true
-                                                break
-                                            }
-                                            if (attempt < maxAttempts - 1) {
-                                                delay(1_000)
-                                            }
-                                        }
-                                        if (!synced) {
-                                            android.util.Log.w(
-                                                "MainActivity",
-                                                "Onboarding profile sync failed after retries; continuing"
-                                            )
-                                        }
-                                    }
                                     appOnboardingDataStore.setHasSeenAuthQrOnFirstLaunch(true)
                                     onboardingCompletedThisSession = true
-                                    onboardingProfileSyncInProgress = false
-                                }
-                                if (authManager.authState.value is AuthState.FullAccount) {
-                                    startupSyncService.requestSyncNow()
                                 }
                             }
                         )

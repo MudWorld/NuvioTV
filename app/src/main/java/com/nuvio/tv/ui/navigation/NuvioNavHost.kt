@@ -1399,20 +1399,23 @@ private fun PlaybackNavHost(
         }
 
         composable(Screen.Account.route) {
-            AuthQrSignInScreen(
-                onBackPress = { navController.popBackStack() }
+            com.nuvio.tv.ui.screens.account.WatchPartyLoginScreen(
+                onBackPress = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
             )
         }
 
         composable(Screen.AuthSignIn.route) {
-            AuthQrSignInScreen(
-                onBackPress = { navController.popBackStack() }
+            com.nuvio.tv.ui.screens.account.WatchPartyLoginScreen(
+                onBackPress = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
             )
         }
 
         composable(Screen.AuthQrSignIn.route) {
-            AuthQrSignInScreen(
-                onBackPress = { navController.popBackStack() }
+            com.nuvio.tv.ui.screens.account.WatchPartyLoginScreen(
+                onBackPress = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
             )
         }
 

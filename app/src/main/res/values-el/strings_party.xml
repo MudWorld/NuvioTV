@@ -4,7 +4,7 @@
     <string name="party_start_title">Παρακολούθηση μαζί</string>
     <string name="party_start_description">Προσκαλέστε τους φίλους σας. Όλοι αναπαράγουν από τις δικές τους πηγές και μένουν συγχρονισμένοι.</string>
     <string name="party_start_action">Έναρξη πάρτι προβολής</string>
-    <string name="party_sign_in_required">Συνδεθείτε στον λογαριασμό σας Nuvio για να χρησιμοποιήσετε τα πάρτι προβολής.</string>
+    <string name="party_sign_in_required">Συνδεθείτε στον λογαριασμό σας WatchParty για να χρησιμοποιήσετε τα πάρτι προβολής.</string>
     <string name="party_unavailable">Τα πάρτι προβολής δεν είναι διαθέσιμα αυτή τη στιγμή.</string>
     <string name="party_experimental">Τα πάρτι προβολής είναι πειραματικά και ενδέχεται να μη λειτουργήσουν όπως αναμένεται.</string>
     <string name="party_code_label">Κωδικός πάρτι</string>
@@ -72,7 +72,7 @@
     <string name="party_share_unavailable">Αυτή η ροή δεν μπορεί να κοινοποιηθεί.</string>
     <string name="party_shared_by">Κοινοποιήθηκε από %1$s</string>
     <string name="party_invite_scan">Σαρώστε με ένα τηλέφωνο για συμμετοχή</string>
-    <string name="party_invite_share">Ή μοιραστείτε τον κωδικό. Οι φίλοι μπορούν να τον εισάγουν στο Πάρτι προβολής σε οποιαδήποτε εφαρμογή Nuvio.</string>
+    <string name="party_invite_share">Ή μοιραστείτε τον κωδικό. Οι φίλοι μπορούν να τον εισάγουν στο Πάρτι προβολής σε οποιαδήποτε εφαρμογή WatchParty.</string>
     <string name="party_invite_qr">Κωδικός QR πρόσκλησης πάρτι προβολής</string>
     <string name="party_phone_chat_note">Ανοίξτε το Πάρτι προβολής στο τηλέφωνό σας με αυτό το προφίλ για συνομιλία.</string>
 </resources>

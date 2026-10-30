@@ -4,7 +4,7 @@
     <string name="party_start_title">צפייה משותפת</string>
     <string name="party_start_description">אפשר להזמין חברים. כל אחד מפעיל מהמקורות שלו וכולם נשארים מסונכרנים.</string>
     <string name="party_start_action">פתיחת מסיבת צפייה</string>
-    <string name="party_sign_in_required">יש להתחבר לחשבון Nuvio כדי להשתמש במסיבות צפייה.</string>
+    <string name="party_sign_in_required">יש להתחבר לחשבון WatchParty כדי להשתמש במסיבות צפייה.</string>
     <string name="party_unavailable">מסיבות צפייה אינן זמינות כרגע.</string>
     <string name="party_experimental">מסיבות צפייה הן ניסיוניות וייתכן שלא יפעלו כמצופה.</string>
     <string name="party_code_label">קוד מסיבה</string>
@@ -72,7 +72,7 @@
     <string name="party_share_unavailable">לא ניתן לשתף זרם זה.</string>
     <string name="party_shared_by">שותף על ידי %1$s</string>
     <string name="party_invite_scan">יש לסרוק בטלפון כדי להצטרף</string>
-    <string name="party_invite_share">או לשתף את הקוד. חברים יכולים להזין אותו במסיבת צפייה בכל אפליקציית Nuvio.</string>
+    <string name="party_invite_share">או לשתף את הקוד. חברים יכולים להזין אותו במסיבת צפייה בכל אפליקציית WatchParty.</string>
     <string name="party_invite_qr">קוד QR להזמנה למסיבת צפייה</string>
     <string name="party_phone_chat_note">יש לפתוח את מסיבת הצפייה בטלפון עם פרופיל זה כדי לשוחח בצ׳אט.</string>
 </resources>

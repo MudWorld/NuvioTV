@@ -4,7 +4,7 @@
     <string name="party_start_title">Oglądaj razem</string>
     <string name="party_start_description">Zaproś znajomych. Każdy odtwarza ze swoich źródeł i jest zsynchronizowany.</string>
     <string name="party_start_action">Rozpocznij wspólne oglądanie</string>
-    <string name="party_sign_in_required">Zaloguj się na konto Nuvio, aby korzystać ze wspólnego oglądania.</string>
+    <string name="party_sign_in_required">Zaloguj się na konto WatchParty, aby korzystać ze wspólnego oglądania.</string>
     <string name="party_unavailable">Wspólne oglądanie jest teraz niedostępne.</string>
     <string name="party_experimental">Wspólne oglądanie jest eksperymentalne i może nie działać zgodnie z oczekiwaniami.</string>
     <string name="party_code_label">Kod pokoju</string>
@@ -72,7 +72,7 @@
     <string name="party_share_unavailable">Tego streamu nie można udostępnić.</string>
     <string name="party_shared_by">Udostępnione przez %1$s</string>
     <string name="party_invite_scan">Zeskanuj telefonem, aby dołączyć</string>
-    <string name="party_invite_share">Lub udostępnij kod. Znajomi mogą go wpisać we Wspólnym oglądaniu w dowolnej aplikacji Nuvio.</string>
+    <string name="party_invite_share">Lub udostępnij kod. Znajomi mogą go wpisać we Wspólnym oglądaniu w dowolnej aplikacji WatchParty.</string>
     <string name="party_invite_qr">Kod QR zaproszenia</string>
     <string name="party_phone_chat_note">Otwórz Wspólne oglądanie na telefonie z tym profilem, aby czatować.</string>
 </resources>
