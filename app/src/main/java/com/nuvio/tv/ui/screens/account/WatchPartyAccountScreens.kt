@@ -84,8 +84,10 @@ fun WatchPartyLoginScreen(
             val restored = runCatching { WatchPartyAccount.pullAfterLogin() }.getOrDefault(false)
             if (restored) {
                 WatchPartyAccount.setMessage("Deine Daten sind da. WatchParty startet neu …")
-                delay(1_500)
-                WatchPartyAccount.restartApp(context)
+                // The restart runs outside this screen's scope; onDone() marks the first-launch
+                // sign-in as seen and may remove this screen right away.
+                WatchPartyAccount.restartSoon(context)
+                onDone()
                 return@launch
             }
             WatchPartyAccount.setMessage("Addons und Plugins werden vom PC übernommen …")

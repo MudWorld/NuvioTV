@@ -260,9 +260,19 @@ object WatchPartyAccount {
         Log.i(TAG, "applied ${files.size} staged files")
     }
 
+    fun restartSoon(context: Context) {
+        val appContext = context.applicationContext
+        scope.launch {
+            delay(1_500)
+            restartApp(appContext)
+        }
+    }
+
     /** Restarts the app so staged files are applied before anything reads them. */
     fun restartApp(context: Context) {
-        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        // A TV-only app has no regular launcher entry, only the leanback one.
+        val launch = (context.packageManager.getLeanbackLaunchIntentForPackage(context.packageName)
+            ?: context.packageManager.getLaunchIntentForPackage(context.packageName))
             ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK) ?: return
         val pending = PendingIntent.getActivity(
             context, 4711, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT
