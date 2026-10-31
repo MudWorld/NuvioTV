@@ -58,6 +58,8 @@ object WatchPartyAccount {
     private const val KeyInitialPullDone = "initial_pull_done"
     const val KeyPcImportDone = "pc_import_done"
     private const val KeyPcCollectionsDone = "pc_collections_done"
+    private const val KeyPcCollectionsPinned = "pc_collections_pinned"
+    private const val KeySidebarCollections = "sidebar_collection_ids"
     private const val KeyLastSync = "last_sync"
 
     /** DataStores that only make sense on this device (caches, sessions, device flags). */
@@ -95,6 +97,10 @@ object WatchPartyAccount {
     private var pendingRequest: Job? = null
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
+    private val _sidebarCollectionIds = MutableStateFlow<List<String>>(emptyList())
+
+    /** Collections shown in the left sidebar, taken from the PC's sidebar choice. */
+    val sidebarCollectionIds: StateFlow<List<String>> = _sidebarCollectionIds.asStateFlow()
 
     private val http by lazy {
         OkHttpClient.Builder()
@@ -113,6 +119,8 @@ object WatchPartyAccount {
         appContext = context.applicationContext
         prefs = appContext.getSharedPreferences("watchparty_account", Context.MODE_PRIVATE)
         applyStagedFiles()
+        _sidebarCollectionIds.value = prefs.getString(KeySidebarCollections, null)
+            ?.split(',')?.filter { it.isNotBlank() }.orEmpty()
         _state.value = State(username = prefs.getString(KeyUsername, null), lastSyncAt = prefs.getLong(KeyLastSync, 0L))
     }
 
@@ -124,6 +132,10 @@ object WatchPartyAccount {
             if (needsPcCollections) {
                 runCatching { WatchPartyDesktopImport.runCollections(appContext) }
                     .onFailure { Log.w(TAG, "collections import failed", it) }
+            }
+            if (isSignedIn) {
+                runCatching { WatchPartyDesktopImport.followPcCollectionLayout(appContext) }
+                    .onFailure { Log.w(TAG, "collection layout from PC failed", it) }
             }
             delay(15_000)
             while (true) {
@@ -309,6 +321,17 @@ object WatchPartyAccount {
     }
 
     val pcImportDone: Boolean get() = prefs.getBoolean(KeyPcImportDone, false)
+
+    fun setSidebarCollectionIds(ids: List<String>) {
+        prefs.edit().putString(KeySidebarCollections, ids.joinToString(",")).apply()
+        _sidebarCollectionIds.value = ids
+    }
+
+    val pcCollectionsPinned: Boolean get() = prefs.getBoolean(KeyPcCollectionsPinned, false)
+
+    fun markPcCollectionsPinned() {
+        prefs.edit().putBoolean(KeyPcCollectionsPinned, true).apply()
+    }
 
     fun markPcCollectionsDone() {
         prefs.edit().putBoolean(KeyPcCollectionsDone, true).commit()

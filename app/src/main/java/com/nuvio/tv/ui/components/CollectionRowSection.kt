@@ -241,7 +241,7 @@ fun CollectionRowSection(
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-private fun FolderCard(
+internal fun FolderCard(
     folder: CollectionFolder,
     collection: Collection,
     posterCardStyle: PosterCardStyle,

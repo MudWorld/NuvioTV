@@ -50,6 +50,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
@@ -282,6 +283,9 @@ open class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var addonRepository: AddonRepository
+
+    @Inject
+    lateinit var collectionsDataStore: com.nuvio.tv.data.local.CollectionsDataStore
 
     @Inject
     lateinit var trackingProgressRefreshCoordinator: TrackingProgressRefreshCoordinator
@@ -1018,8 +1022,16 @@ open class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    val rootRoutes = remember(discoverLocation) {
+                    // WatchParty: collections the PC shows in its sidebar get their own sidebar entries.
+                    val allCollections by collectionsDataStore.collections.collectAsState(initial = emptyList())
+                    val sidebarCollectionIds by com.nuvio.tv.watchparty.WatchPartyAccount.sidebarCollectionIds.collectAsState()
+                    val sidebarCollections = remember(allCollections, sidebarCollectionIds) {
+                        sidebarCollectionIds.mapNotNull { id -> allCollections.firstOrNull { it.id == id } }
+                    }
+                    val rootRoutes = remember(discoverLocation, sidebarCollections) {
                         buildSet {
+                            add(Screen.WatchPartyCollection.route)
+                            sidebarCollections.forEach { add(Screen.WatchPartyCollection.createRoute(it.id)) }
                             add(Screen.Home.route)
                             add(Screen.Search.route)
                             add(Screen.Library.route)
@@ -1041,7 +1053,8 @@ open class MainActivity : ComponentActivity() {
                         strNavSearch,
                         strNavLibrary,
                         strNavSettings,
-                        discoverLocation
+                        discoverLocation,
+                        sidebarCollections
                     ) {
                         buildList {
                             add(
@@ -1074,6 +1087,15 @@ open class MainActivity : ComponentActivity() {
                                     iconRes = R.raw.sidebar_library
                                 )
                             )
+                            sidebarCollections.forEach { collection ->
+                                add(
+                                    DrawerItem(
+                                        route = Screen.WatchPartyCollection.createRoute(collection.id),
+                                        label = collection.title,
+                                        icon = Icons.Default.Folder
+                                    )
+                                )
+                            }
                             add(
                                 DrawerItem(
                                     route = Screen.Settings.route,
@@ -1083,8 +1105,14 @@ open class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                    // The nav destination of a collection is the route pattern; match its argument instead.
+                    val openCollectionRoute = navBackStackEntry
+                        ?.takeIf { optimisticRoute == null && actualRoute == Screen.WatchPartyCollection.route }
+                        ?.arguments?.getString("collectionId")
+                        ?.let { Screen.WatchPartyCollection.createRoute(it) }
                     val selectedDrawerRoute = drawerItems.firstOrNull { item ->
-                        currentRoute == item.route || currentRoute?.startsWith("${item.route}/") == true
+                        openCollectionRoute == item.route ||
+                            currentRoute == item.route || currentRoute?.startsWith("${item.route}/") == true
                     }?.route
                     val selectedDrawerItem = drawerItems.firstOrNull { it.route == selectedDrawerRoute } ?: drawerItems.first()
 
@@ -2350,13 +2378,15 @@ private fun navigateToDrawerRoute(
         }
         return
     }
+    // All collections share one destination, so a saved state would bring back another collection.
+    val isCollection = targetRoute.startsWith("wp_collection/")
     try {
         navController.navigate(targetRoute) {
             popUpTo(navController.graph.startDestinationId) {
-                saveState = true
+                saveState = !isCollection
             }
-            launchSingleTop = true
-            restoreState = true
+            launchSingleTop = !isCollection
+            restoreState = !isCollection
         }
     } catch (e: IllegalArgumentException) {
         Log.w("NuvioNavigation", "Route not found in nav graph: $targetRoute", e)

@@ -44,6 +44,7 @@ object WatchPartyDesktopImport {
         val addons = importAddons(deps)
         val repositories = importPlugins(deps)
         val collections = importCollections(deps)
+        runCatching { followPcCollectionLayout(context) }.onFailure { Log.w(TAG, "collection layout", it) }
         WatchPartyAccount.markPcImportDone()
         WatchPartyAccount.markPcCollectionsDone()
         Log.i(TAG, "imported $addons addons, $repositories plugin repositories, $collections collections")
@@ -118,9 +119,38 @@ object WatchPartyDesktopImport {
         if (incoming.isEmpty()) return 0
         val current = store.getCurrentCollections()
         val existingIds = current.map { it.id }.toSet()
-        val added = incoming.filter { it.id !in existingIds }
+        // Pinned, so they sit at the top of Home as on the PC, not after every catalog.
+        val added = incoming.filter { it.id !in existingIds }.map { it.copy(pinToTop = true) }
         if (added.isNotEmpty()) store.setCollections(current + added)
         return added.size
+    }
+
+    /**
+     * Follows the PC's collection layout: the sidebar shows the collections the PC has in its
+     * sidebar (every start, so changes on the PC arrive), and once, collections that came from the
+     * PC before they were pinned are pinned to the top of Home.
+     */
+    suspend fun followPcCollectionLayout(context: Context) = withContext(Dispatchers.IO) {
+        val settings = readProperties("nuvio_collection_mobile_settings")
+            ?.getProperty("collection_mobile_settings_$PrimaryProfile")
+            ?.let { raw -> runCatching { JSONObject(raw) }.getOrNull() }
+        val sidebar = settings?.optJSONArray("sidebar_collection_ids")
+        if (sidebar != null) {
+            WatchPartyAccount.setSidebarCollectionIds((0 until sidebar.length()).mapNotNull { index ->
+                sidebar.optString(index).takeIf { it.isNotBlank() }
+            })
+        }
+        if (WatchPartyAccount.pcCollectionsPinned) return@withContext
+        val deps = EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
+        val pcIds = readProperties("nuvio_collections")?.getProperty("collections_$PrimaryProfile")
+            ?.let { deps.collectionsDataStore().importFromJson(it) }
+            ?.map { it.id }?.toSet() ?: return@withContext
+        val store = deps.collectionsDataStore()
+        val current = store.getCurrentCollections()
+        if (current.any { it.id in pcIds && !it.pinToTop }) {
+            store.setCollections(current.map { if (it.id in pcIds) it.copy(pinToTop = true) else it })
+        }
+        WatchPartyAccount.markPcCollectionsPinned()
     }
 
     private fun readProperties(store: String): Properties? {

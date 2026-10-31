@@ -1350,6 +1350,18 @@ private fun PlaybackNavHost(
             )
         }
 
+        composable(
+            route = Screen.WatchPartyCollection.route,
+            arguments = listOf(navArgument("collectionId") { type = NavType.StringType })
+        ) { entry ->
+            com.nuvio.tv.ui.screens.collection.WatchPartyCollectionScreen(
+                collectionId = entry.arguments?.getString("collectionId").orEmpty(),
+                onFolderClick = { collectionId, folderId ->
+                    navController.navigate(Screen.FolderDetail.createRoute(collectionId, folderId))
+                }
+            )
+        }
+
         composable(Screen.Collections.route) {
             com.nuvio.tv.ui.screens.collection.CollectionManagementScreen(
                 onNavigateToEditor = { collectionId ->
