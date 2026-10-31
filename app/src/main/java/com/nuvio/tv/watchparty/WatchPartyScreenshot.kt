@@ -29,7 +29,9 @@ object WatchPartyScreenshot {
             override fun onActivityResumed(activity: Activity) { current = WeakReference(activity) }
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
             override fun onActivityStarted(activity: Activity) = Unit
-            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) {
+                if (current?.get() === activity) current = null
+            }
             override fun onActivityStopped(activity: Activity) = Unit
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
             override fun onActivityDestroyed(activity: Activity) = Unit
@@ -45,7 +47,8 @@ object WatchPartyScreenshot {
             return
         }
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        PixelCopy.request(activity.window, bitmap, { result ->
+        // Only while WatchParty is in front: a window in the background has no surface to copy.
+        val listener = PixelCopy.OnPixelCopyFinishedListener { result ->
             if (result == PixelCopy.SUCCESS) {
                 val target = File(context.getExternalFilesDir(null), "screenshot.png")
                 runCatching { target.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } }
@@ -55,7 +58,13 @@ object WatchPartyScreenshot {
             }
             bitmap.recycle()
             done()
-        }, Handler(Looper.getMainLooper()))
+        }
+        runCatching { PixelCopy.request(activity.window, bitmap, listener, Handler(Looper.getMainLooper())) }
+            .onFailure {
+                Log.w("WatchPartyScreenshot", "PixelCopy not possible", it)
+                bitmap.recycle()
+                done()
+            }
     }
 }
 
