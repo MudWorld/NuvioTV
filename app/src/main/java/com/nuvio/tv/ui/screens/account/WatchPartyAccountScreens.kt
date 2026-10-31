@@ -90,10 +90,12 @@ fun WatchPartyLoginScreen(
                 onDone()
                 return@launch
             }
-            WatchPartyAccount.setMessage("Addons und Plugins werden vom PC übernommen …")
+            WatchPartyAccount.setMessage("Addons, Plugins und Sammlungen werden vom PC übernommen …")
             val imported = runCatching { WatchPartyDesktopImport.run(context) }.getOrNull()
             WatchPartyAccount.setMessage(
-                imported?.let { "Vom PC übernommen: ${it.addons} Addons, ${it.repositories} Plugin-Quellen" }
+                imported?.let {
+                    "Vom PC übernommen: ${it.addons} Addons, ${it.repositories} Plugin-Quellen, ${it.collections} Sammlungen"
+                }
             )
             WatchPartyAccount.requestSync()
             delay(1_500)
@@ -239,14 +241,16 @@ fun WatchPartyAccountPanel(
         item(key = "wp_import") {
             SettingsActionButton(
                 icon = Icons.Default.CloudDownload,
-                title = "Addons und Plugins vom PC übernehmen",
-                subtitle = "Fügt fehlende Addons und Plugin-Quellen vom PC hinzu, ändert am PC nichts",
+                title = "Addons, Plugins und Sammlungen vom PC übernehmen",
+                subtitle = "Fügt fehlende Addons, Plugin-Quellen und Sammlungen vom PC hinzu, ändert am PC nichts",
                 onClick = {
                     scope.launch {
                         WatchPartyAccount.setMessage("Wird übernommen …")
                         val result = runCatching { WatchPartyDesktopImport.run(context) }.getOrNull()
                         WatchPartyAccount.setMessage(
-                            result?.let { "Vom PC übernommen: ${it.addons} Addons, ${it.repositories} Plugin-Quellen" }
+                            result?.let {
+                                "Vom PC übernommen: ${it.addons} Addons, ${it.repositories} Plugin-Quellen, ${it.collections} Sammlungen"
+                            }
                                 ?: "Übernahme fehlgeschlagen"
                         )
                         WatchPartyAccount.requestSync()

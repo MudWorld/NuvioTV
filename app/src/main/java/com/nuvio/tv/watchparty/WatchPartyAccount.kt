@@ -57,6 +57,7 @@ object WatchPartyAccount {
     private const val KeyPushedHashes = "pushed_hashes"
     private const val KeyInitialPullDone = "initial_pull_done"
     const val KeyPcImportDone = "pc_import_done"
+    private const val KeyPcCollectionsDone = "pc_collections_done"
     private const val KeyLastSync = "last_sync"
 
     /** DataStores that only make sense on this device (caches, sessions, device flags). */
@@ -119,7 +120,12 @@ object WatchPartyAccount {
     fun start() {
         if (loopJob != null) return
         loopJob = scope.launch {
-            delay(20_000)
+            delay(5_000)
+            if (needsPcCollections) {
+                runCatching { WatchPartyDesktopImport.runCollections(appContext) }
+                    .onFailure { Log.w(TAG, "collections import failed", it) }
+            }
+            delay(15_000)
             while (true) {
                 if (isSignedIn) runCatching { syncNow() }
                 delay(PushIntervalMs)
@@ -152,6 +158,7 @@ object WatchPartyAccount {
                 .putString(KeyUsername, response.optString("username", username.trim()))
                 .putBoolean(KeyInitialPullDone, false)
                 .putBoolean(KeyPcImportDone, false)
+                .putBoolean(KeyPcCollectionsDone, false)
                 .remove(KeyPushedHashes)
                 .commit()
             _state.update { it.copy(username = prefs.getString(KeyUsername, null)) }
@@ -194,6 +201,7 @@ object WatchPartyAccount {
             prefs.edit()
                 .putBoolean(KeyInitialPullDone, true)
                 .putBoolean(KeyPcImportDone, true)
+                .putBoolean(KeyPcCollectionsDone, true)
                 .putString(KeyPushedHashes, hashes.toString())
                 .commit()
             true
@@ -301,6 +309,14 @@ object WatchPartyAccount {
     }
 
     val pcImportDone: Boolean get() = prefs.getBoolean(KeyPcImportDone, false)
+
+    fun markPcCollectionsDone() {
+        prefs.edit().putBoolean(KeyPcCollectionsDone, true).commit()
+    }
+
+    /** Signed in, first import done, but collections not copied yet (TVs set up before they were). */
+    val needsPcCollections: Boolean
+        get() = isSignedIn && prefs.getBoolean(KeyPcImportDone, false) && !prefs.getBoolean(KeyPcCollectionsDone, false)
 
     fun setMessage(message: String?) = _state.update { it.copy(message = message) }
 

@@ -3,6 +3,7 @@ package com.nuvio.tv.watchparty
 import android.content.Context
 import android.util.Log
 import com.nuvio.tv.core.plugin.PluginManager
+import com.nuvio.tv.data.local.CollectionsDataStore
 import com.nuvio.tv.data.local.AddonPreferences
 import com.nuvio.tv.domain.repository.AddonRepository
 import dagger.hilt.EntryPoint
@@ -33,17 +34,29 @@ object WatchPartyDesktopImport {
         fun addonRepository(): AddonRepository
         fun addonPreferences(): AddonPreferences
         fun pluginManager(): PluginManager
+        fun collectionsDataStore(): CollectionsDataStore
     }
 
-    data class Result(val addons: Int, val repositories: Int)
+    data class Result(val addons: Int, val repositories: Int, val collections: Int)
 
     suspend fun run(context: Context): Result = withContext(Dispatchers.IO) {
         val deps = EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
         val addons = importAddons(deps)
         val repositories = importPlugins(deps)
+        val collections = importCollections(deps)
         WatchPartyAccount.markPcImportDone()
-        Log.i(TAG, "imported $addons addons, $repositories plugin repositories")
-        Result(addons, repositories)
+        WatchPartyAccount.markPcCollectionsDone()
+        Log.i(TAG, "imported $addons addons, $repositories plugin repositories, $collections collections")
+        Result(addons, repositories, collections)
+    }
+
+    /** Collections only, for TVs that ran the first import before collections were copied. */
+    suspend fun runCollections(context: Context): Int = withContext(Dispatchers.IO) {
+        val deps = EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
+        importCollections(deps).also {
+            WatchPartyAccount.markPcCollectionsDone()
+            Log.i(TAG, "imported $it collections")
+        }
     }
 
     /** True when this TV already has addons the user installed (beyond nothing at all). */
@@ -95,6 +108,19 @@ object WatchPartyDesktopImport {
             deps.pluginManager().setPluginsEnabled(state.optBoolean("pluginsEnabled", true))
         }
         return count
+    }
+
+    /** The PC stores collections in the same JSON as the TV; ones the TV already has are kept. */
+    private suspend fun importCollections(deps: Deps): Int {
+        val json = readProperties("nuvio_collections")?.getProperty("collections_$PrimaryProfile") ?: return 0
+        val store = deps.collectionsDataStore()
+        val incoming = store.importFromJson(json)
+        if (incoming.isEmpty()) return 0
+        val current = store.getCurrentCollections()
+        val existingIds = current.map { it.id }.toSet()
+        val added = incoming.filter { it.id !in existingIds }
+        if (added.isNotEmpty()) store.setCollections(current + added)
+        return added.size
     }
 
     private fun readProperties(store: String): Properties? {
