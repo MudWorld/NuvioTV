@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.runtime.Composable
@@ -50,9 +49,8 @@ import java.text.DateFormat
 import java.util.Date
 
 /**
- * WatchParty sign-in: user name and password of the user's own account. After sign-in the TV
- * either restores its own data from the account (and restarts) or copies addons and plugins from
- * the PC once.
+ * WatchParty sign-in: user name and password of the user's own account. The same sign-in starts
+ * the app's profile sync, so profiles, continue watching and library come from the account.
  */
 @Composable
 fun WatchPartyLoginScreen(
@@ -80,24 +78,8 @@ fun WatchPartyLoginScreen(
                 working = false
                 return@launch
             }
-            WatchPartyAccount.setMessage("Angemeldet, Daten werden geladen …")
-            val restored = runCatching { WatchPartyAccount.pullAfterLogin() }.getOrDefault(false)
-            if (restored) {
-                WatchPartyAccount.setMessage("Deine Daten sind da. WatchParty startet neu …")
-                // The restart runs outside this screen's scope; onDone() marks the first-launch
-                // sign-in as seen and may remove this screen right away.
-                WatchPartyAccount.restartSoon(context)
-                onDone()
-                return@launch
-            }
-            WatchPartyAccount.setMessage("Addons, Plugins und Sammlungen werden vom PC übernommen …")
-            val imported = runCatching { WatchPartyDesktopImport.run(context) }.getOrNull()
-            WatchPartyAccount.setMessage(
-                imported?.let {
-                    "Vom PC übernommen: ${it.addons} Addons, ${it.repositories} Plugin-Quellen, ${it.collections} Sammlungen"
-                }
-            )
-            WatchPartyAccount.requestSync()
+            WatchPartyAccount.setMessage("Angemeldet, Profile und Daten werden geladen …")
+            runCatching { WatchPartyDesktopImport.followPcCollectionLayout(context) }
             delay(1_500)
             working = false
             onDone()
@@ -120,7 +102,11 @@ fun WatchPartyLoginScreen(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "Mit deinem WatchParty-Konto kommen Addons, Plugins und Einstellungen auf diesen Fernseher.",
+                text = if (WatchPartyAccount.needsSyncSignIn) {
+                    "Neu: Profile wie bei Netflix auf allen Geräten. Bitte melde dich dafür einmal neu an."
+                } else {
+                    "Mit deinem WatchParty-Konto kommen Profile, Weiterschauen, Addons und Plugins auf diesen Fernseher."
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = NuvioTheme.colors.TextSecondary,
                 textAlign = TextAlign.Center
@@ -192,8 +178,8 @@ fun WatchPartyAccountPanel(
         if (state.username == null) {
             item(key = "wp_info") {
                 Text(
-                    text = "Melde dich mit deinem WatchParty-Konto an. Dann werden Addons, Plugins, " +
-                        "Bibliothek und Fortschritt alle 10 Minuten und beim Pausieren gesichert.",
+                    text = "Melde dich mit deinem WatchParty-Konto an. Dann sind Profile, Weiterschauen, " +
+                        "Bibliothek, Addons und Plugins auf allen deinen Geräten gleich.",
                     style = MaterialTheme.typography.bodySmall,
                     color = NuvioTheme.colors.TextSecondary
                 )
@@ -213,7 +199,7 @@ fun WatchPartyAccountPanel(
             val last = state.lastSyncAt.takeIf { it > 0 }
                 ?.let { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it)) }
             Text(
-                text = "Angemeldet als ${state.username}" + (last?.let { " · zuletzt gesichert $it" } ?: ""),
+                text = "Angemeldet als ${state.username}" + (last?.let { " · zuletzt synchronisiert $it" } ?: ""),
                 style = MaterialTheme.typography.bodyMedium,
                 color = NuvioTheme.colors.TextPrimary
             )
@@ -226,43 +212,23 @@ fun WatchPartyAccountPanel(
         item(key = "wp_sync") {
             SettingsActionButton(
                 icon = Icons.Default.Sync,
-                title = if (state.busy) "Wird gesichert …" else "Jetzt sichern",
-                subtitle = "Sonst automatisch alle 10 Minuten und beim Pausieren",
+                title = "Jetzt synchronisieren",
+                subtitle = "Sonst automatisch, z. B. beim Pausieren und Schließen eines Videos",
                 onClick = {
                     scope.launch {
-                        WatchPartyAccount.syncNow().onSuccess { count ->
-                            WatchPartyAccount.setMessage(if (count == 0) "Alles aktuell" else "$count Bereiche gesichert")
-                        }
+                        WatchPartyAccount.syncNow()
+                            .onSuccess { WatchPartyAccount.setMessage("Synchronisierung gestartet") }
+                            .onFailure { WatchPartyAccount.setMessage("Synchronisierung fehlgeschlagen") }
                     }
                 },
                 modifier = firstModifier
-            )
-        }
-        item(key = "wp_import") {
-            SettingsActionButton(
-                icon = Icons.Default.CloudDownload,
-                title = "Addons, Plugins und Sammlungen vom PC übernehmen",
-                subtitle = "Fügt fehlende Addons, Plugin-Quellen und Sammlungen vom PC hinzu, ändert am PC nichts",
-                onClick = {
-                    scope.launch {
-                        WatchPartyAccount.setMessage("Wird übernommen …")
-                        val result = runCatching { WatchPartyDesktopImport.run(context) }.getOrNull()
-                        WatchPartyAccount.setMessage(
-                            result?.let {
-                                "Vom PC übernommen: ${it.addons} Addons, ${it.repositories} Plugin-Quellen, ${it.collections} Sammlungen"
-                            }
-                                ?: "Übernahme fehlgeschlagen"
-                        )
-                        WatchPartyAccount.requestSync()
-                    }
-                }
             )
         }
         item(key = "wp_logout") {
             SettingsActionButton(
                 icon = Icons.AutoMirrored.Filled.Logout,
                 title = "Abmelden",
-                subtitle = "Daten auf diesem Fernseher bleiben erhalten",
+                subtitle = "Meldet auch den Profil-Sync auf diesem Fernseher ab",
                 onClick = { scope.launch { WatchPartyAccount.logout() } }
             )
         }

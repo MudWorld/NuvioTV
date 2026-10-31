@@ -311,7 +311,6 @@ class PlayerViewModel @Inject constructor(
     override fun onCleared() {
         postPlayRecommendationController.stop()
         controller.onCleared()
-        com.nuvio.tv.watchparty.WatchPartyAccount.requestSync()
         // Allow the trailer player to be re-created when returning to home screen.
         trailerPlayerPool.reclaim()
         super.onCleared()

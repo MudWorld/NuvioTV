@@ -749,8 +749,9 @@ open class MainActivity : ComponentActivity() {
                     if (!surfaceContentReady) {
                         // Still loading auth state; nothing to show yet.
                     } else if (
-                        hasSeenAuthQrOnFirstLaunch == false &&
-                        authState !is AuthState.FullAccount &&
+                        // WatchParty: also once for TVs signed in before the profile sync existed.
+                        ((hasSeenAuthQrOnFirstLaunch == false && authState !is AuthState.FullAccount) ||
+                            com.nuvio.tv.watchparty.WatchPartyAccount.needsSyncSignIn) &&
                         !onboardingCompletedThisSession
                     ) {
                         startupDestination = StartupDestination.Setup

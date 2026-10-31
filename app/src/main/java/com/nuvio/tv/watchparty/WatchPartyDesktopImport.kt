@@ -2,27 +2,22 @@ package com.nuvio.tv.watchparty
 
 import android.content.Context
 import android.util.Log
-import com.nuvio.tv.core.plugin.PluginManager
+import com.nuvio.tv.core.auth.AuthManager
+import com.nuvio.tv.core.sync.StartupSyncService
 import com.nuvio.tv.data.local.CollectionsDataStore
-import com.nuvio.tv.data.local.AddonPreferences
-import com.nuvio.tv.domain.repository.AddonRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.StringReader
 import java.util.Properties
 
 /**
- * One-time copy of the PC's addons and plugin repositories onto the TV.
- *
- * Reads the PC's sections (`pc.*`, java .properties text) and installs through the app's own
- * repositories, so the TV stores them in its normal format. The PC sections are only read.
+ * WatchParty glue to the app: the Nuvio sync sign-in, and what the TV takes over from the PC's
+ * sections (`pc.*`, java .properties text, only read): which collections the sidebar lists.
  */
 object WatchPartyDesktopImport {
     private const val TAG = "WatchPartyImport"
@@ -31,135 +26,37 @@ object WatchPartyDesktopImport {
     @EntryPoint
     @InstallIn(SingletonComponent::class)
     interface Deps {
-        fun addonRepository(): AddonRepository
-        fun addonPreferences(): AddonPreferences
-        fun pluginManager(): PluginManager
+        fun authManager(): AuthManager
+        fun startupSyncService(): StartupSyncService
         fun collectionsDataStore(): CollectionsDataStore
         fun tmdbCollectionSourceResolver(): com.nuvio.tv.core.tmdb.TmdbCollectionSourceResolver
         fun layoutPreferenceDataStore(): com.nuvio.tv.data.local.LayoutPreferenceDataStore
     }
 
-    data class Result(val addons: Int, val repositories: Int, val collections: Int)
+    private fun deps(context: Context) =
+        EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
 
-    suspend fun run(context: Context): Result = withContext(Dispatchers.IO) {
-        val deps = EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
-        val addons = importAddons(deps)
-        val repositories = importPlugins(deps)
-        val collections = importCollections(deps)
-        runCatching { followPcCollectionLayout(context) }.onFailure { Log.w(TAG, "collection layout", it) }
-        WatchPartyAccount.markPcImportDone()
-        WatchPartyAccount.markPcCollectionsDone()
-        Log.i(TAG, "imported $addons addons, $repositories plugin repositories, $collections collections")
-        Result(addons, repositories, collections)
-    }
+    suspend fun signInSync(context: Context, email: String, password: String): Result<Unit> =
+        deps(context).authManager().signInWithEmail(email, password)
 
-    /** Collections only, for TVs that ran the first import before collections were copied. */
-    suspend fun runCollections(context: Context): Int = withContext(Dispatchers.IO) {
-        val deps = EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
-        importCollections(deps).also {
-            WatchPartyAccount.markPcCollectionsDone()
-            Log.i(TAG, "imported $it collections")
-        }
-    }
+    suspend fun signOutSync(context: Context) = deps(context).authManager().signOut()
 
-    /** True when this TV already has addons the user installed (beyond nothing at all). */
-    suspend fun hasAddons(context: Context): Boolean = withContext(Dispatchers.IO) {
-        val deps = EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
-        deps.addonPreferences().installedAddonUrls.first().isNotEmpty()
-    }
+    fun requestSync(context: Context) = deps(context).startupSyncService().requestSyncNow()
 
-    private suspend fun importAddons(deps: Deps): Int {
-        val properties = readProperties("nuvio_addons") ?: return 0
-        val urls = properties.getProperty("installed_addon_urls_$PrimaryProfile")
-            ?.let { raw -> runCatching { JSONArray(raw) }.getOrNull() }
-            ?: return 0
-        val states = properties.getProperty("addon_enabled_states_$PrimaryProfile")
-            ?.let { raw -> runCatching { JSONObject(raw) }.getOrNull() }
-        val installed = deps.addonPreferences().installedAddonUrls.first().toSet()
-        var count = 0
-        for (index in 0 until urls.length()) {
-            val url = urls.optString(index).takeIf { it.isNotBlank() } ?: continue
-            if (url !in installed) {
-                runCatching { deps.addonRepository().addAddon(url) }
-                    .onSuccess { count++ }
-                    .onFailure { Log.w(TAG, "addon $url", it) }
-            }
-            if (states?.has(url) == true && !states.optBoolean(url, true)) {
-                runCatching { deps.addonRepository().setAddonEnabled(url, false) }
-            }
-        }
-        return count
-    }
-
-    private suspend fun importPlugins(deps: Deps): Int {
-        val properties = readProperties("nuvio_plugins") ?: return 0
-        val state = properties.getProperty("plugins_state_$PrimaryProfile")
-            ?.let { raw -> runCatching { JSONObject(raw) }.getOrNull() }
-            ?: return 0
-        val repositories = state.optJSONArray("repositories") ?: JSONArray()
-        val existing = deps.pluginManager().repositories.first().map { it.url }.toSet()
-        var count = 0
-        for (index in 0 until repositories.length()) {
-            val url = repositories.optJSONObject(index)?.optString("manifestUrl")
-                ?.takeIf { it.isNotBlank() } ?: continue
-            if (url in existing) continue
-            deps.pluginManager().addRepository(url)
-                .onSuccess { count++ }
-                .onFailure { Log.w(TAG, "plugin repository $url", it) }
-        }
-        if (state.has("pluginsEnabled")) {
-            deps.pluginManager().setPluginsEnabled(state.optBoolean("pluginsEnabled", true))
-        }
-        return count
-    }
-
-    /** The PC stores collections in the same JSON as the TV; ones the TV already has are kept. */
-    private suspend fun importCollections(deps: Deps): Int {
-        val json = readProperties("nuvio_collections")?.getProperty("collections_$PrimaryProfile") ?: return 0
-        val store = deps.collectionsDataStore()
-        val incoming = store.importFromJson(json)
-        if (incoming.isEmpty()) return 0
-        val current = store.getCurrentCollections()
-        val existingIds = current.map { it.id }.toSet()
-        // Pinned, so they sit at the top of Home as on the PC, not after every catalog.
-        val added = incoming.filter { it.id !in existingIds }.map { it.copy(pinToTop = true) }
-        if (added.isNotEmpty()) store.setCollections(current + added)
-        return added.size
-    }
-
-    /**
-     * Follows the PC's collection layout: the sidebar shows the collections the PC has in its
-     * sidebar (every start, so changes on the PC arrive), and once, collections that came from the
-     * PC before they were pinned are pinned to the top of Home.
-     */
+    /** The sidebar shows the collections the PC has in its sidebar (read at every start). */
     suspend fun followPcCollectionLayout(context: Context) = withContext(Dispatchers.IO) {
         val settings = readProperties("nuvio_collection_mobile_settings")
             ?.getProperty("collection_mobile_settings_$PrimaryProfile")
             ?.let { raw -> runCatching { JSONObject(raw) }.getOrNull() }
-        val sidebar = settings?.optJSONArray("sidebar_collection_ids")
-        if (sidebar != null) {
-            WatchPartyAccount.setSidebarCollectionIds((0 until sidebar.length()).mapNotNull { index ->
-                sidebar.optString(index).takeIf { it.isNotBlank() }
-            })
-        }
-        if (WatchPartyAccount.pcCollectionsPinned) return@withContext
-        val deps = EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
-        val pcIds = readProperties("nuvio_collections")?.getProperty("collections_$PrimaryProfile")
-            ?.let { deps.collectionsDataStore().importFromJson(it) }
-            ?.map { it.id }?.toSet() ?: return@withContext
-        val store = deps.collectionsDataStore()
-        val current = store.getCurrentCollections()
-        if (current.any { it.id in pcIds && !it.pinToTop }) {
-            store.setCollections(current.map { if (it.id in pcIds) it.copy(pinToTop = true) else it })
-        }
-        WatchPartyAccount.markPcCollectionsPinned()
+        val sidebar = settings?.optJSONArray("sidebar_collection_ids") ?: return@withContext
+        WatchPartyAccount.setSidebarCollectionIds((0 until sidebar.length()).mapNotNull { index ->
+            sidebar.optString(index).takeIf { it.isNotBlank() }
+        })
     }
 
     /** The floating sidebar that looks like the Apple TV one (with "Sammlungen"). */
     suspend fun useModernSidebar(context: Context) = withContext(Dispatchers.IO) {
-        EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
-            .layoutPreferenceDataStore()
-            .setModernSidebarEnabled(true)
+        deps(context).layoutPreferenceDataStore().setModernSidebarEnabled(true)
     }
 
     private fun readProperties(store: String): Properties? {

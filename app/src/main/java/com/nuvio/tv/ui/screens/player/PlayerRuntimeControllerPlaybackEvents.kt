@@ -927,8 +927,6 @@ internal fun PlayerRuntimeController.saveWatchProgressInternal(position: Long, d
                     profileId = profileId,
                     syncRemote = syncRemote
                 )
-                // Explicit saves (pause, stop, episode switch) also back up to the WatchParty account.
-                if (syncRemote) com.nuvio.tv.watchparty.WatchPartyAccount.requestSync()
                 runCatching { tvRecommendationManager.updateSingleWatchNextProgram(normalizedProgress) }
             }
         } catch (error: IOException) {
