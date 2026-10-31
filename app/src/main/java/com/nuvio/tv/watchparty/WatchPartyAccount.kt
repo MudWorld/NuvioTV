@@ -60,6 +60,7 @@ object WatchPartyAccount {
     private const val KeyPcCollectionsDone = "pc_collections_done"
     private const val KeyPcCollectionsPinned = "pc_collections_pinned"
     private const val KeySidebarCollections = "sidebar_collection_ids"
+    private const val KeyModernSidebarSet = "modern_sidebar_set"
     private const val KeyLastSync = "last_sync"
 
     /** DataStores that only make sense on this device (caches, sessions, device flags). */
@@ -128,6 +129,10 @@ object WatchPartyAccount {
     fun start() {
         if (loopJob != null) return
         loopJob = scope.launch {
+            if (takeModernSidebarDefault()) {
+                runCatching { WatchPartyDesktopImport.useModernSidebar(appContext) }
+                    .onFailure { Log.w(TAG, "modern sidebar", it) }
+            }
             delay(5_000)
             if (needsPcCollections) {
                 runCatching { WatchPartyDesktopImport.runCollections(appContext) }
@@ -328,6 +333,13 @@ object WatchPartyAccount {
     }
 
     val pcCollectionsPinned: Boolean get() = prefs.getBoolean(KeyPcCollectionsPinned, false)
+
+    /** True once: the Apple TV style sidebar is switched on a single time, later the user decides. */
+    fun takeModernSidebarDefault(): Boolean {
+        if (prefs.getBoolean(KeyModernSidebarSet, false)) return false
+        prefs.edit().putBoolean(KeyModernSidebarSet, true).apply()
+        return true
+    }
 
     fun markPcCollectionsPinned() {
         prefs.edit().putBoolean(KeyPcCollectionsPinned, true).apply()

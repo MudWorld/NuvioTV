@@ -230,6 +230,8 @@ class HomeViewModel @Inject constructor(
     internal val catalogOrder = mutableListOf<String>()
     internal var addonsCache: List<Addon> = emptyList()
     internal var collectionsCache: List<Collection> = emptyList()
+    internal val watchPartyFolderRowCache = java.util.concurrent.ConcurrentHashMap<String, CatalogRow>()
+    internal var watchPartyFolderJob: Job? = null
     internal var homeCatalogOrderKeys: List<String> = emptyList()
     internal var disabledHomeCatalogKeys: Set<String> = emptySet()
     internal var followAddonsOrderEnabled: Boolean = false

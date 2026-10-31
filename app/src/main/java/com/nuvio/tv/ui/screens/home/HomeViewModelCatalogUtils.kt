@@ -176,7 +176,7 @@ internal fun HomeViewModel.findCatalogItemById(itemId: String): MetaPreview? = s
     val focusedRow = liveFocusedRowKey?.let { key -> rows.firstOrNull { it.stableKey() == key } }
     (listOfNotNull(focusedRow) + rows).firstNotNullOfOrNull { row ->
         row.items.firstOrNull { it.id == itemId }
-    }
+    } ?: watchPartyFolderRowCache.values.firstNotNullOfOrNull { row -> row.items.firstOrNull { it.id == itemId } }
 }
 
 internal inline fun HomeViewModel.updateIndexedCatalogItem(
@@ -199,6 +199,17 @@ internal inline fun HomeViewModel.updateIndexedCatalogItem(
             mutableItems[itemIndex] = updatedItem
             catalogsMap[key] = row.copy(items = mutableItems)
             truncatedRowCache.remove(key)
+            changed = true
+        }
+        // Collection folder categories hold their own rows; enrich their copy of the title too,
+        // so the hero shows its logo and text.
+        watchPartyFolderRowCache.entries.forEach { entry ->
+            val row = entry.value
+            val itemIndex = row.items.indexOfFirst { it.id == itemId }
+            if (itemIndex < 0) return@forEach
+            val updatedItem = transform(row.items[itemIndex])
+            if (updatedItem == row.items[itemIndex]) return@forEach
+            entry.setValue(row.copy(items = row.items.toMutableList().also { it[itemIndex] = updatedItem }))
             changed = true
         }
 

@@ -54,6 +54,7 @@ internal fun HomeViewModel.observeCollectionsPipeline() {
                 collectionsCache = collections.associateBy { it.id }.values.toList()
                 rebuildCatalogOrder(addonsCache)
                 scheduleUpdateCatalogRows()
+                loadWatchPartyFolderRows(collectionsCache)
             }
     }
 }
@@ -724,18 +725,14 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
                 placeholderDescriptors.associateBy { it.catalogKey }
             }
             val addedCollectionIds = mutableSetOf<String>()
-            collectionsCache.forEach { collection ->
-                val key = "collection_${collection.id}"
-            if (collection.pinToTop && key !in disabledHomeCatalogKeys && addedCollectionIds.add(collection.id)) {
-                add(HomeRow.CollectionRow(collection))
-            }
-        }
+            // WatchParty: no pinned block of folder tiles above everything; each collection's
+            // folders become categories at the collection's place in the order below.
         for (key in orderedKeys) {
             if (key in disabledHomeCatalogKeys) continue
             val collectionEntry = collectionsSnapshot[key]
             if (collectionEntry != null) {
-                if (!collectionEntry.pinToTop && addedCollectionIds.add(collectionEntry.id)) {
-                    add(HomeRow.CollectionRow(collectionEntry))
+                if (addedCollectionIds.add(collectionEntry.id)) {
+                    watchPartyFolderRows(collectionEntry).forEach { add(HomeRow.Catalog(it)) }
                 }
             } else {
                     val catalogRow = displayRowsByKey[key]
@@ -795,7 +792,7 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
                 }
             }
         }
-    }
+    }.let(::watchPartyPlaceFolderRows)
 
     val nextGridItems = if (currentLayout == HomeLayout.GRID) {
         val posterCardWidthDp = _uiState.value.posterCardWidthDp

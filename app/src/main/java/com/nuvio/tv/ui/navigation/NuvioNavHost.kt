@@ -282,7 +282,13 @@ private fun PlaybackNavHost(
                     )
                 },
                 onNavigateToCatalogSeeAll = { catalogId, addonId, type ->
-                    navController.navigate(Screen.CatalogSeeAll.createRoute(catalogId, addonId, type))
+                    if (addonId == com.nuvio.tv.ui.screens.home.WatchPartyFolderAddonId) {
+                        // A collection folder category: "see all" opens the folder.
+                        val (collectionId, folderId) = catalogId.split('|', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+                        navController.navigate(Screen.FolderDetail.createRoute(collectionId, folderId))
+                    } else {
+                        navController.navigate(Screen.CatalogSeeAll.createRoute(catalogId, addonId, type))
+                    }
                 },
                 onNavigateToFolderDetail = { collectionId, folderId ->
                     navController.navigate(Screen.FolderDetail.createRoute(collectionId, folderId))
@@ -1347,18 +1353,6 @@ private fun PlaybackNavHost(
         composable(Screen.CatalogOrder.route) {
             CatalogOrderScreen(
                 onBackPress = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Screen.WatchPartyCollection.route,
-            arguments = listOf(navArgument("collectionId") { type = NavType.StringType })
-        ) { entry ->
-            com.nuvio.tv.ui.screens.collection.WatchPartyCollectionScreen(
-                collectionId = entry.arguments?.getString("collectionId").orEmpty(),
-                onFolderClick = { collectionId, folderId ->
-                    navController.navigate(Screen.FolderDetail.createRoute(collectionId, folderId))
-                }
             )
         }
 

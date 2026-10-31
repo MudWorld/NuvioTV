@@ -175,12 +175,6 @@ sealed class Screen(val route: String) {
 
     data object Collections : Screen("collections")
 
-    /** WatchParty: one collection opened from the sidebar. */
-    data object WatchPartyCollection : Screen("wp_collection/{collectionId}") {
-        fun createRoute(collectionId: String): String =
-            "wp_collection/${URLEncoder.encode(collectionId, "UTF-8").replace("+", "%20")}"
-    }
-
     data object CollectionEditor : Screen("collection_editor?collectionId={collectionId}") {
         fun createRoute(collectionId: String? = null): String {
             return "collection_editor?collectionId=${collectionId ?: ""}"

@@ -8,6 +8,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -191,23 +195,37 @@ internal fun ModernSidebarBlurPanel(
 
         Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
 
+        val hasSections = drawerItems.any { it.sectionTitle != null }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
-            verticalArrangement = Arrangement.Center,
+                .weight(1f)
+                .then(if (hasSections) Modifier.verticalScroll(rememberScrollState()) else Modifier),
+            verticalArrangement = if (hasSections) Arrangement.Top else Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Column(
-                modifier = Modifier.offset(y = (-12).dp),
-                verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm - NuvioTheme.spacing.xxs)
+                modifier = Modifier.offset(y = if (hasSections) 0.dp else (-12).dp),
+                verticalArrangement = Arrangement.spacedBy(if (hasSections) NuvioTheme.spacing.xxs else NuvioTheme.spacing.sm - NuvioTheme.spacing.xxs)
             ) {
                 drawerItems.forEachIndexed { index, item ->
+                    item.sectionTitle?.let { title ->
+                        Text(
+                            text = title,
+                            style = androidx.tv.material3.MaterialTheme.typography.titleSmall,
+                            color = NuvioTheme.colors.TextSecondary,
+                            modifier = Modifier
+                                .padding(start = NuvioTheme.spacing.lg, top = NuvioTheme.spacing.md)
+                                .graphicsLayer { alpha = sidebarLabelAlpha }
+                        )
+                    }
                     key(item.route) {
                         SidebarNavigationItem(
                             label = item.label,
                             iconRes = item.iconRes,
                             icon = item.icon,
+                            imageUrl = item.imageUrl,
+                            compact = hasSections,
                             selected = selectedDrawerRoute == item.route,
                             focusEnabled = keepSidebarFocusDuringCollapse,
                             labelAlpha = sidebarLabelAlpha,
@@ -234,6 +252,8 @@ private fun SidebarNavigationItem(
     label: String,
     iconRes: Int?,
     icon: ImageVector?,
+    imageUrl: String? = null,
+    compact: Boolean = false,
     selected: Boolean,
     focusEnabled: Boolean,
     labelAlpha: Float,
@@ -325,7 +345,7 @@ private fun SidebarNavigationItem(
                     this.selected = selected
                 }
                 .fillMaxWidth()
-                .padding(horizontal = NuvioTheme.spacing.lg - NuvioTheme.spacing.xxs, vertical = NuvioTheme.spacing.sm + NuvioTheme.spacing.xxs),
+                .padding(horizontal = NuvioTheme.spacing.lg - NuvioTheme.spacing.xxs, vertical = if (compact) NuvioTheme.spacing.xs + NuvioTheme.spacing.xxs else NuvioTheme.spacing.sm + NuvioTheme.spacing.xxs),
             verticalAlignment = Alignment.CenterVertically
         ) {
         Box(
@@ -351,6 +371,21 @@ private fun SidebarNavigationItem(
                 Modifier.size(NuvioComponents.tokens.sidebar.iconSize)
             }
             when {
+                // Collection folder: its logo in a circle, as on the Apple TV.
+                imageUrl != null -> Box(
+                    modifier = Modifier
+                        .size(SidebarLeadingVisualSize)
+                        .clip(CircleShape)
+                        .background(Color(0xFF2A2A2E)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(SidebarLeadingVisualSize * 0.8f)
+                    )
+                }
                 icon != null -> Icon(
                     imageVector = icon,
                     contentDescription = null,

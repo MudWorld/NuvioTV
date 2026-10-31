@@ -35,6 +35,8 @@ object WatchPartyDesktopImport {
         fun addonPreferences(): AddonPreferences
         fun pluginManager(): PluginManager
         fun collectionsDataStore(): CollectionsDataStore
+        fun tmdbCollectionSourceResolver(): com.nuvio.tv.core.tmdb.TmdbCollectionSourceResolver
+        fun layoutPreferenceDataStore(): com.nuvio.tv.data.local.LayoutPreferenceDataStore
     }
 
     data class Result(val addons: Int, val repositories: Int, val collections: Int)
@@ -151,6 +153,13 @@ object WatchPartyDesktopImport {
             store.setCollections(current.map { if (it.id in pcIds) it.copy(pinToTop = true) else it })
         }
         WatchPartyAccount.markPcCollectionsPinned()
+    }
+
+    /** The floating sidebar that looks like the Apple TV one (with "Sammlungen"). */
+    suspend fun useModernSidebar(context: Context) = withContext(Dispatchers.IO) {
+        EntryPointAccessors.fromApplication(context.applicationContext, Deps::class.java)
+            .layoutPreferenceDataStore()
+            .setModernSidebarEnabled(true)
     }
 
     private fun readProperties(store: String): Properties? {

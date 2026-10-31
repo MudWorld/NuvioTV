@@ -239,7 +239,11 @@ data class DrawerItem(
     val route: String,
     val label: String,
     val iconRes: Int? = null,
-    val icon: ImageVector? = null
+    val icon: ImageVector? = null,
+    /** WatchParty: round logo for collection folders, shown instead of the icon. */
+    val imageUrl: String? = null,
+    /** WatchParty: section heading shown above this item ("Sammlungen"). */
+    val sectionTitle: String? = null
 )
 
 private data class MainUiPrefs(
@@ -1022,16 +1026,15 @@ open class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    // WatchParty: collections the PC shows in its sidebar get their own sidebar entries.
+                    // WatchParty: the folders of the collections the PC shows in its sidebar are listed
+                    // under "Sammlungen" in the sidebar, as on the Apple TV.
                     val allCollections by collectionsDataStore.collections.collectAsState(initial = emptyList())
                     val sidebarCollectionIds by com.nuvio.tv.watchparty.WatchPartyAccount.sidebarCollectionIds.collectAsState()
                     val sidebarCollections = remember(allCollections, sidebarCollectionIds) {
                         sidebarCollectionIds.mapNotNull { id -> allCollections.firstOrNull { it.id == id } }
                     }
-                    val rootRoutes = remember(discoverLocation, sidebarCollections) {
+                    val rootRoutes = remember(discoverLocation) {
                         buildSet {
-                            add(Screen.WatchPartyCollection.route)
-                            sidebarCollections.forEach { add(Screen.WatchPartyCollection.createRoute(it.id)) }
                             add(Screen.Home.route)
                             add(Screen.Search.route)
                             add(Screen.Library.route)
@@ -1087,15 +1090,6 @@ open class MainActivity : ComponentActivity() {
                                     iconRes = R.raw.sidebar_library
                                 )
                             )
-                            sidebarCollections.forEach { collection ->
-                                add(
-                                    DrawerItem(
-                                        route = Screen.WatchPartyCollection.createRoute(collection.id),
-                                        label = collection.title,
-                                        icon = Icons.Default.Folder
-                                    )
-                                )
-                            }
                             add(
                                 DrawerItem(
                                     route = Screen.Settings.route,
@@ -1103,16 +1097,23 @@ open class MainActivity : ComponentActivity() {
                                     iconRes = R.raw.sidebar_settings
                                 )
                             )
+                            sidebarCollections
+                                .flatMap { collection -> collection.folders.map { collection to it } }
+                                .forEachIndexed { index, (collection, folder) ->
+                                    add(
+                                        DrawerItem(
+                                            route = Screen.FolderDetail.createRoute(collection.id, folder.id),
+                                            label = folder.title,
+                                            icon = Icons.Default.Folder,
+                                            imageUrl = folder.titleLogoUrl ?: folder.coverImageUrl,
+                                            sectionTitle = if (index == 0) "Sammlungen" else null
+                                        )
+                                    )
+                                }
                         }
                     }
-                    // The nav destination of a collection is the route pattern; match its argument instead.
-                    val openCollectionRoute = navBackStackEntry
-                        ?.takeIf { optimisticRoute == null && actualRoute == Screen.WatchPartyCollection.route }
-                        ?.arguments?.getString("collectionId")
-                        ?.let { Screen.WatchPartyCollection.createRoute(it) }
                     val selectedDrawerRoute = drawerItems.firstOrNull { item ->
-                        openCollectionRoute == item.route ||
-                            currentRoute == item.route || currentRoute?.startsWith("${item.route}/") == true
+                        currentRoute == item.route || currentRoute?.startsWith("${item.route}/") == true
                     }?.route
                     val selectedDrawerItem = drawerItems.firstOrNull { it.route == selectedDrawerRoute } ?: drawerItems.first()
 
@@ -2378,8 +2379,8 @@ private fun navigateToDrawerRoute(
         }
         return
     }
-    // All collections share one destination, so a saved state would bring back another collection.
-    val isCollection = targetRoute.startsWith("wp_collection/")
+    // All folders share one destination, so a saved state would bring back another folder.
+    val isCollection = targetRoute.startsWith("folder_detail/")
     try {
         navController.navigate(targetRoute) {
             popUpTo(navController.graph.startDestinationId) {
