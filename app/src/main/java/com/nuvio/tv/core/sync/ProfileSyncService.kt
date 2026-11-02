@@ -1,5 +1,6 @@
 package com.nuvio.tv.core.sync
 
+import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 import com.nuvio.tv.core.auth.AuthManager
@@ -9,8 +10,10 @@ import com.nuvio.tv.data.remote.supabase.SupabaseProfile
 import com.nuvio.tv.data.remote.supabase.SupabaseProfilePinVerifyResult
 import com.nuvio.tv.domain.model.UserProfile
 import com.nuvio.tv.domain.model.AuthState
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -23,6 +26,9 @@ import javax.inject.Singleton
 
 private const val TAG = "ProfileSyncService"
 private const val PROFILE_PULL_MIN_INTERVAL_MS = 10_000L
+private const val PENDING_PREFS = "watchparty_profile_push"
+private const val KEY_PENDING_USER = "pending_user"
+private val PUSH_RETRY_DELAYS_MS = longArrayOf(2_000L, 5_000L)
 
 internal data class ProfilePullFreshness(
     val userId: String? = null,
@@ -44,6 +50,7 @@ sealed class SetProfilePinResult {
 
 @Singleton
 class ProfileSyncService @Inject constructor(
+    @ApplicationContext context: Context,
     private val authManager: AuthManager,
     private val postgrest: Postgrest,
     private val profileManager: ProfileManager,
@@ -52,6 +59,16 @@ class ProfileSyncService @Inject constructor(
     private val pullMutex = Mutex()
     private var pullFreshness = ProfilePullFreshness()
     private var lastPulledProfiles = emptyList<UserProfile>()
+
+    // WatchParty: a profile change that has not reached the server yet. A pull replaces the local
+    // profile list with the server's, so without this a failed upload would delete a new profile
+    // on the next sync. Stored per account so it survives app restarts.
+    private val pendingPrefs = context.getSharedPreferences(PENDING_PREFS, Context.MODE_PRIVATE)
+
+    private fun currentUserId(): String? = (authManager.authState.value as? AuthState.FullAccount)?.userId
+
+    private fun hasPendingPush(userId: String?): Boolean =
+        userId != null && pendingPrefs.getString(KEY_PENDING_USER, null) == userId
 
     private suspend fun <T> withJwtRefreshRetry(block: suspend () -> T): T {
         return try {
@@ -63,7 +80,22 @@ class ProfileSyncService @Inject constructor(
     }
 
     suspend fun pushToRemote(): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
+        val userId = currentUserId()
+        if (userId != null) pendingPrefs.edit().putString(KEY_PENDING_USER, userId).commit()
+        var result = pushOnce()
+        for (wait in PUSH_RETRY_DELAYS_MS) {
+            if (result.isSuccess) break
+            delay(wait)
+            result = pushOnce()
+        }
+        if (result.isSuccess && userId != null && currentUserId() == userId) {
+            pendingPrefs.edit().remove(KEY_PENDING_USER).commit()
+        }
+        result
+    }
+
+    private suspend fun pushOnce(): Result<Unit> {
+        return try {
             val profiles = profileManager.profiles.value
 
             val params = buildJsonObject {
@@ -103,6 +135,13 @@ class ProfileSyncService @Inject constructor(
             val now = SystemClock.elapsedRealtime()
             if (!force && userId != null && pullFreshness.isRecent(userId, now)) {
                 return@withLock Result.success(lastPulledProfiles)
+            }
+            if (hasPendingPush(userId)) {
+                Log.w(TAG, "pullFromRemote: local profile changes not uploaded yet, uploading first")
+                if (pushToRemote().isFailure) {
+                    Log.w(TAG, "pullFromRemote: upload still failing, keeping local profiles")
+                    return@withLock Result.success(profileManager.profiles.value)
+                }
             }
             try {
                 val response = withJwtRefreshRetry {

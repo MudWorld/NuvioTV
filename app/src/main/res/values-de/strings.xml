@@ -398,9 +398,9 @@
     <string name="experience_mode_essential">Standard</string>
     <string name="experience_mode_advanced">Fortgeschritten</string>
     <string name="experience_mode_choose_title">Wähle dein WatchParty-Erlebnis</string>
-    <string name="experience_mode_choose_subtitle">Start simple or unlock every customization. You can switch anytime.</string>
-    <string name="experience_mode_essential_card_subtitle">Focused setup, add-ons, playback basics, Trakt, and account settings.</string>
-    <string name="experience_mode_advanced_card_subtitle">Full settings, layout controls, catalog order, collections, plug-ins, and diagnostics.</string>
+    <string name="experience_mode_choose_subtitle">Einfach starten oder alles anpassen. Du kannst jederzeit wechseln.</string>
+    <string name="experience_mode_essential_card_subtitle">Das Wichtigste: Addons, Wiedergabe, Trakt und Konto.</string>
+    <string name="experience_mode_advanced_card_subtitle">Alle Einstellungen: Layout, Katalog-Reihenfolge, Sammlungen, Plugins und Diagnose.</string>
     <string name="experience_mode_group_title">Experience mode</string>
     <string name="essential_addon_continue_for_now">Continue for now</string>
     <string name="essential_playback_basics">Playback basics</string>
@@ -2268,4 +2268,26 @@
     <string name="trakt_comments_error_request_failed">Trakt comments request failed</string>
     <string name="trakt_library_error_fetch_list_items">Failed to fetch list items</string>
 
+    <string name="profile_copy_settings_label">Einstellungen kopieren</string>
+    <string name="profile_copy_settings_setup_title">Profil-Einstellungen</string>
+    <string name="profile_copy_settings_setup_subtitle">Neu beginnen oder die TV-Einstellungen einmalig von einem anderen Profil übernehmen.</string>
+    <string name="profile_copy_settings_start_fresh">Neu beginnen</string>
+    <string name="profile_copy_settings_primary_source">%1$s (Hauptprofil)</string>
+    <string name="profile_copy_settings_create_fresh">Einstellungen: neu beginnen</string>
+    <string name="profile_copy_settings_create_source">Einstellungen: von %1$s</string>
+    <string name="profile_copy_settings_title">Einstellungen nach %1$s kopieren</string>
+    <string name="profile_copy_settings_subtitle">Wähle ein Profil als Vorlage. Seine TV-Einstellungen ersetzen einmalig die Einstellungen dieses Profils.</string>
+    <string name="profile_copy_settings_from">Kopieren von</string>
+    <string name="profile_copy_settings_action">Einstellungen kopieren</string>
+    <string name="profile_copy_settings_copying">Wird kopiert…</string>
+    <string name="profile_copy_settings_apply">Übernehmen</string>
+    <string name="profile_copy_settings_credentials_off">API-Schlüssel: nicht kopieren</string>
+    <string name="profile_copy_settings_credentials_on">API-Schlüssel: fehlende kopieren</string>
+    <string name="profile_copy_settings_details">Vorhandene API-Schlüssel bleiben erhalten. Anmeldungen, Addons, Plugins, Startseite, PIN, Verlauf, Bibliothek, Downloads und gerätespezifische Einstellungen bleiben unverändert.</string>
+    <string name="profile_copy_settings_exclusions">Anmeldungen, Addons, Plugins, Startseite, PIN, Verlauf, Bibliothek, Downloads und gerätespezifische Einstellungen bleiben unverändert.</string>
+    <string name="profile_copy_settings_success">Einstellungen von %1$s nach %2$s kopiert.</string>
+    <string name="profile_copy_settings_error">Einstellungen konnten nicht kopiert werden. Prüfe die Verbindung und versuche es erneut.</string>
+    <string name="profile_copy_settings_created_success">Profil mit den Einstellungen von %1$s angelegt.</string>
+    <string name="profile_copy_settings_created_error">Profil angelegt, aber die Einstellungen konnten nicht kopiert werden. Du kannst es in den Profiloptionen erneut versuchen.</string>
+    <string name="profile_create_error">Profil konnte nicht angelegt werden. Bitte erneut versuchen.</string>
 </resources>

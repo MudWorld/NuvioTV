@@ -45,8 +45,6 @@ import com.nuvio.tv.watchparty.WatchPartyAccount
 import com.nuvio.tv.watchparty.WatchPartyDesktopImport
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.text.DateFormat
-import java.util.Date
 
 /**
  * WatchParty sign-in: user name and password of the user's own account. The same sign-in starts
@@ -81,6 +79,7 @@ fun WatchPartyLoginScreen(
             WatchPartyAccount.setMessage("Angemeldet, Profile und Daten werden geladen …")
             runCatching { WatchPartyDesktopImport.followPcCollectionLayout(context) }
             delay(1_500)
+            WatchPartyAccount.setMessage(null)
             working = false
             onDone()
         }
@@ -196,10 +195,8 @@ fun WatchPartyAccountPanel(
             return@LazyColumn
         }
         item(key = "wp_user") {
-            val last = state.lastSyncAt.takeIf { it > 0 }
-                ?.let { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it)) }
             Text(
-                text = "Angemeldet als ${state.username}" + (last?.let { " · zuletzt synchronisiert $it" } ?: ""),
+                text = "Angemeldet als ${state.username} · Profile und Verlauf werden automatisch abgeglichen",
                 style = MaterialTheme.typography.bodyMedium,
                 color = NuvioTheme.colors.TextPrimary
             )
