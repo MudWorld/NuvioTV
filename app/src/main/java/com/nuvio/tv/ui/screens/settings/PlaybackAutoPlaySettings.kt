@@ -2,6 +2,7 @@
 
 package com.nuvio.tv.ui.screens.settings
 
+import com.nuvio.tv.watchparty.StreamLanguageFilter
 import com.nuvio.tv.ui.theme.NuvioTheme
 
 import android.view.KeyEvent
@@ -85,6 +86,19 @@ internal fun PlaybackStreamSelectionSection(
     } else {
         settings.streamAutoPlaySource
     }
+
+    // WatchParty: a click steps through All -> German + subtitled -> German only; the list and auto-play both follow it
+    val languageFilter = StreamLanguageFilter.fromStorage(settings.streamLanguageFilter)
+    SettingsActionRow(
+        title = "Stream-Sprache",
+        subtitle = null,
+        value = languageFilter.label,
+        onClick = {
+            val all = StreamLanguageFilter.entries
+            val next = all[(all.indexOf(languageFilter) + 1) % all.size]
+            onUpdate { setStreamLanguageFilter(next.storageValue) }
+        }
+    )
 
     SettingsActionRow(
         title = stringResource(R.string.autoplay_stream_selection),

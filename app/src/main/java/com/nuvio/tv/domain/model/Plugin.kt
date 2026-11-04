@@ -1,5 +1,6 @@
 package com.nuvio.tv.domain.model
 
+import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
@@ -63,7 +64,18 @@ data class ScraperManifestInfo(
     val formats: List<String>? = null,
     val supportedFormats: List<String>? = null,
     val supportsExternalPlayer: Boolean? = null,
-    val limited: Boolean? = null
+    val limited: Boolean? = null,
+    // WatchParty: a title this provider really offers, used by the plugin test instead of always The Matrix
+    val testCase: ScraperTestCase? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ScraperTestCase(
+    @Json(name = "tmdb") val tmdbId: String,
+    val type: String = "movie",
+    val season: Int? = null,
+    val episode: Int? = null,
+    val title: String? = null
 )
 
 /**
@@ -82,7 +94,8 @@ data class ScraperInfo(
     val contentLanguage: List<String>,
     val repositoryId: String,
     val formats: List<String>?,
-    val type: RepositoryType = RepositoryType.NUVIO_JS
+    val type: RepositoryType = RepositoryType.NUVIO_JS,
+    val testCase: ScraperTestCase? = null
 ) {
     fun supportsType(type: String): Boolean {
         val normalizedType = normalizePluginType(type)

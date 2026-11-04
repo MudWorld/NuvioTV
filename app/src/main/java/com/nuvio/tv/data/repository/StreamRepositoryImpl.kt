@@ -12,6 +12,9 @@ import com.nuvio.tv.core.plugin.resolvePluginSeasonEpisode
 import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.core.tmdb.TmdbService
 import com.nuvio.tv.data.local.DebridSettingsDataStore
+import com.nuvio.tv.data.local.PlayerSettingsDataStore
+import com.nuvio.tv.watchparty.StreamLanguageClassifier
+import com.nuvio.tv.watchparty.StreamLanguageFilter
 import com.nuvio.tv.data.mapper.toDomain
 import com.nuvio.tv.data.mediaserver.ServerStreamSource
 import com.nuvio.tv.data.mediaserver.ServerStreams
@@ -41,6 +44,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
@@ -59,7 +63,8 @@ class StreamRepositoryImpl @Inject constructor(
     private val tmdbService: TmdbService,
     private val debridStreamPresentation: DebridStreamPresentation,
     private val localDebridAvailabilityService: LocalDebridAvailabilityService,
-    private val serverStreams: ServerStreams
+    private val serverStreams: ServerStreams,
+    private val playerSettingsDataStore: PlayerSettingsDataStore
 ) : StreamRepository {
     private val streamSearchSessions = StreamSearchSessionCache()
     private val localPluginSearchPaused = MutableStateFlow(false)
@@ -99,6 +104,8 @@ class StreamRepositoryImpl @Inject constructor(
         val sourceConfiguration = captureSourceConfiguration()
         val isNativeServerRequest = serverStreams.isNativeRequest(videoId)
         val requestKey = buildStreamSearchRequestKey(sourceConfiguration, type, videoId, season, episode)
+        // WatchParty: the stream list and every auto-play path read this flow, so filtering here covers them all
+        val languageFilter = StreamLanguageFilter.fromStorage(playerSettingsDataStore.playerSettings.first().streamLanguageFilter)
 
         emitAll(
             streamSearchSessions.observe(
@@ -117,6 +124,8 @@ class StreamRepositoryImpl @Inject constructor(
                         sourceConfiguration.enabledScrapers.any { scraper -> scraper.supportsType(type) },
                     serverSources = serverStreams.sources(type, videoId, season, episode, forceRefresh)
                 )
+            }.map { result ->
+                if (result is NetworkResult.Success) NetworkResult.Success(StreamLanguageClassifier.apply(result.data, languageFilter)) else result
             }
         )
     }
@@ -128,7 +137,9 @@ class StreamRepositoryImpl @Inject constructor(
         episode: Int?
     ): List<AddonStreams>? = streamSearchSessions.peek(
         buildStreamSearchRequestKey(captureSourceConfiguration(), type, videoId, season, episode)
-    )
+    )?.let { cached ->
+        StreamLanguageClassifier.apply(cached, StreamLanguageFilter.fromStorage(playerSettingsDataStore.playerSettings.first().streamLanguageFilter))
+    }
 
     private fun buildStreamSearchRequestKey(
         sourceConfiguration: StreamSourceConfigurationSnapshot,

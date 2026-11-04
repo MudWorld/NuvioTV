@@ -506,6 +506,10 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setStreamAutoPlayRegex(regex)
     }
 
+    suspend fun setStreamLanguageFilter(filter: String) {
+        playerSettingsDataStore.setStreamLanguageFilter(filter)
+    }
+
     suspend fun setPostPlayRecommendationsEnabled(enabled: Boolean) {
         playerSettingsDataStore.setPostPlayRecommendationsEnabled(enabled)
     }

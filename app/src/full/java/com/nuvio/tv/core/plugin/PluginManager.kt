@@ -907,10 +907,12 @@ class PluginManager @Inject constructor(
 
         diagnostics.addStep("Scraper: ${scraper.name} (type=${scraper.type})")
 
-        // Use a popular movie for testing (The Matrix - 603)
-        val testTmdbId = "603"
-        val testMediaType = if (scraper.supportsType("movie")) "movie" else "series"
-        diagnostics.addStep("Test: TMDB $testTmdbId ($testMediaType)")
+        // WatchParty: the manifest can name a title the provider really has; without one it is The Matrix (603) as before
+        val testCase = scraper.testCase
+        val testTmdbId = testCase?.tmdbId ?: "603"
+        val testMediaType = testCase?.let { if (it.type == "movie") "movie" else "series" }
+            ?: if (scraper.supportsType("movie")) "movie" else "series"
+        diagnostics.addStep("Test: TMDB $testTmdbId ($testMediaType)${testCase?.title?.let { " · $it" } ?: ""}")
 
         // Preload extractors from ALL .cs3 files in the same repo(s)
         if (scraper.type == RepositoryType.EXTERNAL_DEX) {
@@ -922,8 +924,8 @@ class PluginManager @Inject constructor(
             }
         }
 
-        val testSeason = if (testMediaType == "movie") null else 1
-        val testEpisode = if (testMediaType == "movie") null else 1
+        val testSeason = if (testMediaType == "movie") null else testCase?.season ?: 1
+        val testEpisode = if (testMediaType == "movie") null else testCase?.episode ?: 1
 
         return try {
             val results = when (scraper.type) {
@@ -1047,7 +1049,8 @@ class PluginManager @Inject constructor(
                     manifestEnabled = info.enabled,
                     logo = info.logo,
                     contentLanguage = info.contentLanguage ?: emptyList(),
-                    formats = info.formats
+                    formats = info.formats,
+                    testCase = info.testCase
                 )
                 
                 // Save code
