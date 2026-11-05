@@ -375,6 +375,12 @@ class AuthManager @Inject constructor(
         }
     }
 
+    /** WatchParty: a session the WatchParty server issued after a phone or PC approved this TV's code. */
+    suspend fun importWatchPartySession(tokenResponseJson: String): Result<Unit> = runCatching {
+        val result = json.decodeFromString<TvLoginExchangeResult>(tokenResponseJson)
+        auth.importTokenResponse(result)
+    }
+
     suspend fun signOut(explicit: Boolean = true) {
         sessionValidator.reset()
         if (explicit) {

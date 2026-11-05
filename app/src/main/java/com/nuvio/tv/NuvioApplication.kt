@@ -85,6 +85,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
         com.nuvio.tv.watchparty.WatchPartyAccount.init(this)
         super.onCreate()
         com.nuvio.tv.watchparty.WatchPartyAccount.start()
+        com.nuvio.tv.watchparty.WatchPartyExtras.init(this)
         com.nuvio.tv.watchparty.WatchPartyScreenshot.register(this)
         SentryInitializer.start(this, sentrySettingsDataStore)
         PluginRuntimeHooks.onApplicationCreate(this)

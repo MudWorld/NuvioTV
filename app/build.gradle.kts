@@ -187,6 +187,11 @@ android {
             dimension = "distribution"
             // WatchParty: own app id so it never replaces or mixes with an installed Nuvio.
             applicationId = "space.mudworld.watchparty.androidtv"
+            // WatchParty build number: the in-app updater compares it with the server's latest.json.
+            val watchPartyBuild = 13
+            versionCode = 1100 + watchPartyBuild
+            versionName = "WatchParty Build $watchPartyBuild"
+            buildConfigField("int", "WATCHPARTY_BUILD", "$watchPartyBuild")
             buildConfigField("boolean", "FEATURE_PLUGINS_ENABLED", "true")
             buildConfigField("boolean", "FEATURE_IN_APP_UPDATES_ENABLED", "false")
             buildConfigField("boolean", "FEATURE_IN_APP_TRAILERS_ENABLED", "true")

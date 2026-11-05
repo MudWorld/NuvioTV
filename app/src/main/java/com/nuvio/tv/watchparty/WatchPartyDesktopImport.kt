@@ -41,6 +41,10 @@ object WatchPartyDesktopImport {
 
     suspend fun signOutSync(context: Context) = deps(context).authManager().signOut()
 
+    /** Signs the app's sync in with the session the server issued for an approved TV code. */
+    suspend fun importSyncSession(context: Context, tokenResponseJson: String): Result<Unit> =
+        deps(context).authManager().importWatchPartySession(tokenResponseJson)
+
     fun requestSync(context: Context) = deps(context).startupSyncService().requestSyncNow()
 
     /** The sidebar shows the collections the PC has in its sidebar (read at every start). */

@@ -101,7 +101,8 @@ object WatchPartyAccount {
         val config = appContext.getSharedPreferences("server_configuration", Context.MODE_PRIVATE)
         if (config.getBoolean("custom_enabled", false) &&
             config.getString("backend_url", null) == BuildConfig.SUPABASE_URL &&
-            config.getString("publishable_key", null) == BuildConfig.SUPABASE_ANON_KEY
+            config.getString("publishable_key", null) == BuildConfig.SUPABASE_ANON_KEY &&
+            config.getBoolean("watch_party", false)
         ) return
         config.edit()
             .putBoolean("custom_enabled", true)
@@ -109,7 +110,7 @@ object WatchPartyAccount {
             .putString("publishable_key", BuildConfig.SUPABASE_ANON_KEY)
             .putBoolean("email_password_auth", true)
             .putBoolean("tv_login", false)
-            .putBoolean("watch_party", false)
+            .putBoolean("watch_party", true) // the WatchParty server runs Nuvio's watch party
             .putString("discovery_url", "${BuildConfig.SUPABASE_URL}/.well-known/nuvio")
             .commit()
     }
@@ -153,6 +154,67 @@ object WatchPartyAccount {
         }.onFailure { error -> _state.update { it.copy(error = describe(error)) } }
             .also { _state.update { it.copy(busy = false) } }
     }
+
+    // ---- sign-in by code ---------------------------------------------------
+
+    /** A code this TV shows; a signed-in iPad, iPhone or PC (or sync.mudworld.space/tv) approves it. */
+    data class CodeLogin(
+        val code: String,
+        val display: String,
+        val secret: String,
+        val url: String,
+        val expiresAtMs: Long,
+        val intervalMs: Long,
+        /** An iPad or iPhone of this household was signed in recently: the code is the easy way. */
+        val suggestCode: Boolean,
+    )
+
+    suspend fun startCodeLogin(): Result<CodeLogin> = withContext(Dispatchers.IO) {
+        runCatching {
+            val body = JSONObject()
+                .put("device", "Android TV ${Build.MODEL}".take(64))
+                .put("platform", "androidtv")
+            val o = JSONObject(request("POST", "/v1/tv-login/start", body.toString(), null))
+            val code = o.getString("code")
+            CodeLogin(
+                code = code,
+                display = o.optString("display", code),
+                secret = o.getString("secret"),
+                url = o.optString("url"),
+                expiresAtMs = System.currentTimeMillis() + o.optLong("expiresIn", 600) * 1000,
+                intervalMs = maxOf(2_000L, o.optLong("interval", 3) * 1000),
+                suggestCode = o.optBoolean("suggestCode", false),
+            )
+        }
+    }
+
+    /** true once signed in, false while waiting; fails with "code_expired" when a new code is needed. */
+    suspend fun pollCodeLogin(login: CodeLogin): Result<Boolean> = withContext(Dispatchers.IO) {
+        runCatching {
+            val body = JSONObject().put("code", login.code).put("secret", login.secret)
+            val o = JSONObject(request("POST", "/v1/tv-login/poll", body.toString(), null))
+            when (o.optString("status")) {
+                "pending" -> false
+                "approved" -> {
+                    val signedIn = o.getJSONObject("login")
+                    val name = signedIn.getString("username")
+                    WatchPartyDesktopImport.importSyncSession(appContext, o.getJSONObject("sync").toString())
+                        .getOrElse { throw WatchPartyException("sync_sign_in_failed") }
+                    prefs.edit()
+                        .putString(KeyToken, signedIn.getString("token"))
+                        .putString(KeyUsername, name)
+                        .putBoolean(KeyNuvioReady, true)
+                        .commit()
+                    _state.update { it.copy(username = name, error = null) }
+                    true
+                }
+                else -> throw WatchPartyException("code_expired")
+            }
+        }
+    }
+
+    /** The WatchParty device token, for the server's own endpoints (reports, updates, error reports). */
+    fun deviceToken(): String? = token
 
     suspend fun logout() = withContext(Dispatchers.IO) {
         token?.let { runCatching { request("POST", "/v1/logout", "{}", it) } }
@@ -220,6 +282,7 @@ object WatchPartyAccount {
         "too_many_attempts" -> "Zu viele Versuche, bitte später erneut"
         "unauthorized" -> "Abgemeldet, bitte neu anmelden"
         "sync_sign_in_failed" -> "Anmeldung für den Profil-Sync fehlgeschlagen, bitte erneut versuchen"
+        "code_expired" -> "Der Code ist abgelaufen, es wird ein neuer angezeigt"
         null -> "Keine Verbindung zum Server"
         else -> "Fehler: ${(error as WatchPartyException).code}"
     }

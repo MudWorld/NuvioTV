@@ -292,9 +292,22 @@ class PluginManager @Inject constructor(
     // Combined flow of enabled scrapers
     val enabledScrapers: Flow<List<ScraperInfo>> = combine(
         scrapers,
-        pluginsEnabled
-    ) { scraperList, enabled ->
-        if (enabled) scraperList.filter { it.enabled } else emptyList()
+        pluginsEnabled,
+        repositories,
+        com.nuvio.tv.watchparty.WatchPartyExtras.providersDown
+    ) { scraperList, enabled, repos, _ ->
+        // WatchParty: German Providers that failed two nightly server checks in a row are skipped.
+        val repoUrls = repos.associate { it.id to it.url }
+        if (enabled) {
+            scraperList.filter {
+                it.enabled && !com.nuvio.tv.watchparty.WatchPartyExtras.isProviderDown(
+                    scraperId = it.id.substringAfterLast(':'),
+                    repositoryUrl = repoUrls[it.repositoryId].orEmpty()
+                )
+            }
+        } else {
+            emptyList()
+        }
     }
     
     /**

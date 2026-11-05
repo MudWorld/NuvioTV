@@ -132,6 +132,15 @@ fun StreamScreen(
     onAutoPlayResolved: (StreamPlaybackInfo) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(uiState.title, uiState.videoId, uiState.season, uiState.episode) {
+        com.nuvio.tv.watchparty.WatchPartyExtras.reportTarget = com.nuvio.tv.watchparty.WatchPartyExtras.ReportTarget(
+            title = listOfNotNull(uiState.title, uiState.episodeName).joinToString(" · "),
+            contentId = uiState.videoId,
+            contentType = uiState.contentType,
+            season = uiState.season,
+            episode = uiState.episode,
+        )
+    }
     val watchProgress by viewModel.watchProgress.collectAsStateWithLifecycle()
     val resumeProgress = streamResumeProgress(watchProgress, startFromBeginning)
     val resumePositionMs = resumeProgress?.position?.takeIf { it > 0L }
@@ -1306,6 +1315,8 @@ private fun StreamsList(
                     reserveBadgeSpace = hasBadgeRules && stream.badges.isEmpty(),
                     label = partySourceLabel.takeIf { isPartySource },
                     onClick = { onStreamSelected(stream) },
+                    // WatchParty: long press = "Link geht nicht" report to the server.
+                    onLongClick = { com.nuvio.tv.watchparty.WatchPartyExtras.reportFromUi(stream) },
                     focusRequester = when {
                         shouldRestoreFocusedStream && index == focusedStreamIndex.coerceIn(0, (streams.lastIndex).coerceAtLeast(0)) -> restoreFocusRequester
                         else -> streamFocusRequesters.getOrPut(streamKeys[index]) { FocusRequester() }
@@ -1339,6 +1350,7 @@ private fun StreamCard(
     badgePlacement: StreamBadgePlacement,
     reserveBadgeSpace: Boolean = false,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     focusRequester: FocusRequester? = null,
     onFocusChanged: ((Boolean) -> Unit)? = null,
     onUpKey: (() -> Unit)? = null,
@@ -1379,6 +1391,7 @@ private fun StreamCard(
 
     Card(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = Modifier
             .fillMaxWidth()
             .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)

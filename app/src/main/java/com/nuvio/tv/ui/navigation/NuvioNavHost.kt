@@ -1217,6 +1217,25 @@ private fun PlaybackNavHost(
             )
         }
 
+        // WatchParty: Live TV (M3U playlists from the PC or added here).
+        composable("watchparty_livetv") {
+            com.nuvio.tv.watchparty.livetv.WatchPartyLiveTvScreen(
+                onBackPress = { navController.popBackStack() },
+                onPlay = { channel, nowPlaying ->
+                    navController.navigate(
+                        Screen.Player.createRoute(
+                            streamUrl = channel.streamUrl,
+                            title = channel.name,
+                            streamName = nowPlaying ?: channel.name,
+                            headers = channel.headers.takeIf { it.isNotEmpty() },
+                            contentType = "channel",
+                            contentName = channel.name,
+                            logo = channel.logoUrl
+                        )
+                    )
+                }
+            )
+        }
         composable(Screen.Library.route) {
             LibraryScreen(
                 showBuiltInHeader = !hideBuiltInHeaders,
